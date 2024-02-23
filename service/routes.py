@@ -89,8 +89,7 @@ def create_products():
     #
     # Uncomment this line of code once you implement READ A PRODUCT
     #
-    # location_url = url_for("get_products", product_id=product.id, _external=True)
-    location_url = "/"  # delete once READ is implemented
+    location_url = url_for("get_products", product_id=product.id, _external=True)
     return jsonify(message), status.HTTP_201_CREATED, {"Location": location_url}
 
 
@@ -100,7 +99,7 @@ def create_products():
 
 @app.route("/products",defaults={'filter_type': None,"filter_value":None}, methods=["GET"])
 @app.route("/products/<filter_type>/<filter_value>", methods=["GET"])
-def get_products(filter_type,filter_value):
+def get_all_products(filter_type,filter_value):
 
     products_count=0
     
@@ -116,14 +115,14 @@ def get_products(filter_type,filter_value):
             products_count=products.count()
         except AttributeError as error:
             abort(status.HTTP_404_NOT_FOUND,"category value is wrong")
-
     elif filter_type=='avalability':
-        if filter_value not in ['True','true','1',1,True,'TRUE','False','false','0',0,False,'FALSE']:
+        if filter_value not in ['True','true','TRUE','1',1,True,'False','false','FALSE','0',0,False]:
             abort(status.HTTP_404_NOT_FOUND,"Availability type is wrong")
-        
         availability=filter_value in ['True','true','1',1,True,'TRUE']
         products=Product.find_by_availability(availability)
         products_count=products.count()
+    else:
+        abort(status.HTTP_404_NOT_FOUND,"Filter type is wrong")
 
     if products_count==0:
         return jsonify([]), status.HTTP_200_OK
@@ -139,7 +138,7 @@ def get_products(filter_type,filter_value):
 ######################################################################
 
 @app.route("/products/<product_id>", methods=["GET"])
-def get_product(product_id):
+def get_products(product_id):
     product=Product.find(product_id)
 
     if not product:

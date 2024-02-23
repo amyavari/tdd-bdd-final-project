@@ -134,15 +134,15 @@ class TestProductRoutes(TestCase):
         # Uncomment this code once READ is implemented
         #
 
-        # # Check that the location header was correct
-        # response = self.client.get(location)
-        # self.assertEqual(response.status_code, status.HTTP_200_OK)
-        # new_product = response.get_json()
-        # self.assertEqual(new_product["name"], test_product.name)
-        # self.assertEqual(new_product["description"], test_product.description)
-        # self.assertEqual(Decimal(new_product["price"]), test_product.price)
-        # self.assertEqual(new_product["available"], test_product.available)
-        # self.assertEqual(new_product["category"], test_product.category.name)
+        # Check that the location header was correct
+        response = self.client.get(location)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        new_product = response.get_json()
+        self.assertEqual(new_product["name"], test_product.name)
+        self.assertEqual(new_product["description"], test_product.description)
+        self.assertEqual(Decimal(new_product["price"]), test_product.price)
+        self.assertEqual(new_product["available"], test_product.available)
+        self.assertEqual(new_product["category"], test_product.category.name)
 
     def test_create_product_with_no_name(self):
         """It should not Create a Product without a name"""
@@ -205,7 +205,7 @@ class TestProductRoutes(TestCase):
         self.assertEqual(data['name'],new_name)
 
     def test_update_product_not_found(self):
-        """It should not Update any Product that wrong Id"""
+        """It should not Update any Product with wrong Id"""
         test_product =self._create_products(1)[0]
         response=self.client.put(f"{BASE_URL}/0",json=test_product.serialize())
         self.assertEqual(response.status_code,status.HTTP_404_NOT_FOUND)
@@ -231,7 +231,6 @@ class TestProductRoutes(TestCase):
         new_product = test_product.serialize()
         response = self.client.put(f"{BASE_URL}/{test_product.id}", data={}, content_type="plain/text")
         self.assertEqual(response.status_code, status.HTTP_415_UNSUPPORTED_MEDIA_TYPE)
-
     
     def test_delete_product(self):
         """It should Delete a single Product"""
@@ -240,7 +239,7 @@ class TestProductRoutes(TestCase):
         #Read sent product
         response=self.client.get(f"{BASE_URL}/{test_product.id}")
         self.assertEqual(response.status_code,status.HTTP_200_OK)
-        #Delete the product and check it not exist anymore
+        #Delete the product and check it is not exist anymore
         response=self.client.delete(f"{BASE_URL}/{test_product.id}")
         self.assertEqual(response.status_code,status.HTTP_200_OK)
         response=self.client.get(f"{BASE_URL}/{test_product.id}")
@@ -251,6 +250,12 @@ class TestProductRoutes(TestCase):
         test_product =self._create_products(1)[0]
         response=self.client.delete(f"{BASE_URL}/0")
         self.assertEqual(response.status_code,status.HTTP_404_NOT_FOUND)
+        #Check product is still in DB
+        response=self.client.get(f"{BASE_URL}/{test_product.id}")
+        self.assertEqual(response.status_code,status.HTTP_200_OK)
+        data=response.get_json()
+        self.assertEqual(data['name'],test_product.name)        
+        
 
     def test_list_all_products(self):
         """It should list all products"""
@@ -291,8 +296,7 @@ class TestProductRoutes(TestCase):
 
     def test_list_all_products_by_name_empty(self):
         """It should not list any products with empty Name value"""
-        test_products =self._create_products(10)
-
+        test_products =self._create_products(5)
         response=self.client.get(f"{BASE_URL}/name/")
         self.assertEqual(response.status_code,status.HTTP_404_NOT_FOUND)
 
@@ -320,9 +324,8 @@ class TestProductRoutes(TestCase):
             self.assertEqual(product["category"],first_category)
     
     def test_list_all_products_by_category_empty(self):
-        """It should not list any products with empty Category value"""
-        test_products =self._create_products(10)
-
+        """It should not list any products with empty or invalid Category value"""
+        test_products =self._create_products(5)
         response=self.client.get(f"{BASE_URL}/category/")
         self.assertEqual(response.status_code,status.HTTP_404_NOT_FOUND)
         response=self.client.get(f"{BASE_URL}/category/not_valid")
@@ -352,11 +355,16 @@ class TestProductRoutes(TestCase):
  
     def test_list_all_products_by_availability_empty(self):
         """It should not list any products with wrong Availability value"""
-        test_products =self._create_products(10)
-
+        test_products =self._create_products(5)
         response=self.client.get(f"{BASE_URL}/avalability/")
         self.assertEqual(response.status_code,status.HTTP_404_NOT_FOUND)
         response=self.client.get(f"{BASE_URL}/avalability/3")
+        self.assertEqual(response.status_code,status.HTTP_404_NOT_FOUND)
+    
+    def test_list_all_products_by_unknown_filter(self):
+        """It should not list any products with wrong Availability value"""
+        test_products =self._create_products(5)
+        response=self.client.get(f"{BASE_URL}/unknown/value")
         self.assertEqual(response.status_code,status.HTTP_404_NOT_FOUND)
 
     ######################################################################
