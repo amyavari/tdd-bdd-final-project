@@ -20,7 +20,7 @@ Product Store Service with UI
 """
 from flask import jsonify, request, abort
 from flask import url_for  # noqa: F401 pylint: disable=unused-import
-from service.models import Product
+from service.models import Product,Category
 from service.common import status  # HTTP Status Codes
 from . import app
 
@@ -98,31 +98,83 @@ def create_products():
 # L I S T   A L L   P R O D U C T S
 ######################################################################
 
-#
-# PLACE YOUR CODE TO LIST ALL PRODUCTS HERE
-#
+@app.route("/products",defaults={'filter_type': None,"filter_value":None}, methods=["GET"])
+@app.route("/products/<filter_type>/<filter_value>", methods=["GET"])
+def get_products(filter_type,filter_value):
+
+    products_count=0
+    
+    if filter_type==None:
+        products=Product.all()
+        products_count=len(products)
+    elif filter_type=='name':
+        products=Product.find_by_name(filter_value)
+        products_count=products.count()
+    elif filter_type=='category':
+        try:
+            products=Product.find_by_category(getattr(Category,filter_value))
+            products_count=products.count()
+        except AttributeError as error:
+            abort(status.HTTP_404_NOT_FOUND,"category is wrong")
+            
+    elif filter_type=='avalability':
+        if filter_value not in ['True','true','1',1,True,'TRUE','False','false','0',0,False,'FALSE']:
+            abort(status.HTTP_404_NOT_FOUND,"Availability type is wrong")
+        
+        availability=filter_value in ['True','true','1',1,True,'TRUE']
+        products=Product.find_by_availability(availability)
+        products_count=products.count()
+
+    if products_count==0:
+        return jsonify([]), status.HTTP_200_OK
+    
+    data=[]
+    for product in products:
+        data.append(product.serialize())
+
+    return jsonify(data), status.HTTP_200_OK
 
 ######################################################################
 # R E A D   A   P R O D U C T
 ######################################################################
 
-#
-# PLACE YOUR CODE HERE TO READ A PRODUCT
-#
+@app.route("/products/<product_id>", methods=["GET"])
+def get_product(product_id):
+    product=Product.find(product_id)
 
+    if not product:
+        abort(status.HTTP_404_NOT_FOUND, f"Product with id '{product_id}' was not found.")
+
+    data=product.serialize()
+    return jsonify(data), status.HTTP_200_OK
 ######################################################################
 # U P D A T E   A   P R O D U C T
 ######################################################################
 
-#
-# PLACE YOUR CODE TO UPDATE A PRODUCT HERE
-#
+@app.route("/products/<product_id>", methods=["PUT"])
+def update_products(product_id):
+    check_content_type("application/json")
 
+    product=Product.find(product_id)
+
+    if not product:
+        abort(status.HTTP_404_NOT_FOUND, f"Product with id '{product_id}' was not found.")
+
+    data = request.get_json()
+    product.deserialize(data)
+    product.update()
+
+    message = product.serialize()
+    return jsonify(message), status.HTTP_200_OK
 ######################################################################
 # D E L E T E   A   P R O D U C T
 ######################################################################
+@app.route("/products/<product_id>", methods=["DELETE"])
+def delete_products(product_id):
+    product=Product.find(product_id)
 
-
-#
-# PLACE YOUR CODE TO DELETE A PRODUCT HERE
-#
+    if not product:
+        abort(status.HTTP_404_NOT_FOUND, f"Product with id '{product_id}' was not found.")
+        
+    product.delete()
+    return jsonify(""), status.HTTP_200_OK
