@@ -115,8 +115,8 @@ def get_products(filter_type,filter_value):
             products=Product.find_by_category(getattr(Category,filter_value))
             products_count=products.count()
         except AttributeError as error:
-            abort(status.HTTP_404_NOT_FOUND,"category is wrong")
-            
+            abort(status.HTTP_404_NOT_FOUND,"category value is wrong")
+
     elif filter_type=='avalability':
         if filter_value not in ['True','true','1',1,True,'TRUE','False','false','0',0,False,'FALSE']:
             abort(status.HTTP_404_NOT_FOUND,"Availability type is wrong")
