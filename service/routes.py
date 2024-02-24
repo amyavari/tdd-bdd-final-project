@@ -97,32 +97,33 @@ def create_products():
 # L I S T   A L L   P R O D U C T S
 ######################################################################
 
-@app.route("/products",defaults={'filter_type': None,"filter_value":None}, methods=["GET"])
-@app.route("/products/<filter_type>/<filter_value>", methods=["GET"])
-def get_all_products(filter_type,filter_value):
+@app.route("/products", methods=["GET"])
+def get_all_products():
 
     products_count=0
+
+    name = request.args.get("name")
+    category = request.args.get("category")
+    available = request.args.get("available")
     
-    if filter_type==None:
-        products=Product.all()
-        products_count=len(products)
-    elif filter_type=='name':
-        products=Product.find_by_name(filter_value)
+    if name:
+        products=Product.find_by_name(name)
         products_count=products.count()
-    elif filter_type=='category':
+    elif category:
         try:
-            products=Product.find_by_category(getattr(Category,filter_value))
+            products=Product.find_by_category(getattr(Category,category.upper()))
             products_count=products.count()
         except AttributeError as error:
             abort(status.HTTP_404_NOT_FOUND,"category value is wrong")
-    elif filter_type=='avalability':
-        if filter_value not in ['True','true','TRUE','1',1,True,'False','false','FALSE','0',0,False]:
+    elif available:
+        if available not in ['True','true','TRUE','1',1,True,'False','false','FALSE','0',0,False]:
             abort(status.HTTP_404_NOT_FOUND,"Availability type is wrong")
-        availability=filter_value in ['True','true','1',1,True,'TRUE']
+        availability=available in ['True','true','1',1,True,'TRUE']
         products=Product.find_by_availability(availability)
         products_count=products.count()
     else:
-        abort(status.HTTP_404_NOT_FOUND,"Filter type is wrong")
+        products=Product.all()
+        products_count=len(products)
 
     if products_count==0:
         return jsonify([]), status.HTTP_200_OK

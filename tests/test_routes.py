@@ -28,6 +28,7 @@ import os
 import logging
 from decimal import Decimal
 from unittest import TestCase
+from urllib.parse import quote_plus
 from service import app
 from service.common import status
 from service.models import db, init_db, Product
@@ -287,18 +288,12 @@ class TestProductRoutes(TestCase):
         first_name=test_products[0].name
         first_name_count=names.count(first_name)
         #list all products by name
-        response=self.client.get(f"{BASE_URL}/name/{first_name}")
+        response=self.client.get(BASE_URL,query_string=f"name={quote_plus(first_name)}")
         self.assertEqual(response.status_code,status.HTTP_200_OK)
         data=response.get_json()
         self.assertEqual(len(data),first_name_count)
         for product in data:
             self.assertEqual(product["name"],first_name)
-
-    def test_list_all_products_by_name_empty(self):
-        """It should not list any products with empty Name value"""
-        test_products =self._create_products(5)
-        response=self.client.get(f"{BASE_URL}/name/")
-        self.assertEqual(response.status_code,status.HTTP_404_NOT_FOUND)
 
 
     def test_list_all_products_by_category(self):
@@ -312,24 +307,16 @@ class TestProductRoutes(TestCase):
         test_products =self._create_products(10)
         categories=[]
         for product in test_products:
-            categories.append(product.category.name)
-        first_category=test_products[0].category.name
+            categories.append(product.category)
+        first_category=test_products[0].category
         first_category_count=categories.count(first_category)
         #list all products by category
-        response=self.client.get(f"{BASE_URL}/category/{first_category}")
+        response=self.client.get(BASE_URL,query_string=f"category={first_category.name}")
         self.assertEqual(response.status_code,status.HTTP_200_OK)
         data=response.get_json()
         self.assertEqual(len(data),first_category_count)
         for product in data:
-            self.assertEqual(product["category"],first_category)
-    
-    def test_list_all_products_by_category_empty(self):
-        """It should not list any products with empty or invalid Category value"""
-        test_products =self._create_products(5)
-        response=self.client.get(f"{BASE_URL}/category/")
-        self.assertEqual(response.status_code,status.HTTP_404_NOT_FOUND)
-        response=self.client.get(f"{BASE_URL}/category/not_valid")
-        self.assertEqual(response.status_code,status.HTTP_404_NOT_FOUND)
+            self.assertEqual(product["category"],first_category.name)
     
     def test_list_all_products_by_availability(self):
         """It should list all products by their Availability"""
@@ -346,25 +333,23 @@ class TestProductRoutes(TestCase):
         first_availability=test_products[0].available
         first_availability_count=availabilities.count(first_availability)
         #list all products by category
-        response=self.client.get(f"{BASE_URL}/avalability/{first_availability}")
+        response=self.client.get(BASE_URL,query_string=f"available={first_availability}")
         self.assertEqual(response.status_code,status.HTTP_200_OK)
         data=response.get_json()
         self.assertEqual(len(data),first_availability_count)
         for product in data:
             self.assertEqual(product["available"],first_availability)
  
-    def test_list_all_products_by_availability_empty(self):
+    def test_list_all_products_by_availability_wrong(self):
         """It should not list any products with wrong Availability value"""
         test_products =self._create_products(5)
-        response=self.client.get(f"{BASE_URL}/avalability/")
+        response=self.client.get(BASE_URL,query_string="available=3")
         self.assertEqual(response.status_code,status.HTTP_404_NOT_FOUND)
-        response=self.client.get(f"{BASE_URL}/avalability/3")
-        self.assertEqual(response.status_code,status.HTTP_404_NOT_FOUND)
-    
-    def test_list_all_products_by_unknown_filter(self):
-        """It should not list any products with wrong Availability value"""
+
+    def test_list_all_products_by_category_wrong(self):
+        """It should not list any products with wrong Category value"""
         test_products =self._create_products(5)
-        response=self.client.get(f"{BASE_URL}/unknown/value")
+        response=self.client.get(BASE_URL,query_string="category=not_valid")
         self.assertEqual(response.status_code,status.HTTP_404_NOT_FOUND)
 
     ######################################################################
