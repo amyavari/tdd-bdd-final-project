@@ -177,4 +177,4 @@ def delete_products(product_id):
         abort(status.HTTP_404_NOT_FOUND, f"Product with id '{product_id}' was not found.")
         
     product.delete()
-    return jsonify(""), status.HTTP_200_OK
+    return jsonify(""), status.HTTP_204_NO_CONTENT

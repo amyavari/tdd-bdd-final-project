@@ -242,7 +242,7 @@ class TestProductRoutes(TestCase):
         self.assertEqual(response.status_code,status.HTTP_200_OK)
         #Delete the product and check it is not exist anymore
         response=self.client.delete(f"{BASE_URL}/{test_product.id}")
-        self.assertEqual(response.status_code,status.HTTP_200_OK)
+        self.assertEqual(response.status_code,status.HTTP_204_NO_CONTENT)
         response=self.client.get(f"{BASE_URL}/{test_product.id}")
         self.assertEqual(response.status_code,status.HTTP_404_NOT_FOUND)
 
